@@ -32,8 +32,8 @@ int main(void)
 }
 
 /*
- a) with n equal to 2147483647, the problem stops working properly and starts spitting out negative numbers. This is because that is the highest number an integer can possibly represent on a 32-bit
-    computer.
+ a) with n equal to 65536 (Done on windows subsystem for linux), the code stops working properly and starts spitting out negative numbers. This is because that is the highest number an integer can possibly represent on a 16-bit
+    system.
  
  b) The distance between the addresses of uninitialized and local, which are both declared in main, is 4. This is because they take up 4 bytes of memory each.
  
