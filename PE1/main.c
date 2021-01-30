@@ -9,9 +9,10 @@ int sum_n(int n)
     if (n == 1){
     return 1;
     }
-    
-    int sum = n + sum_n(n-1);
+    int sum;
     printf("the local variable sum is temporarely stored in %p\n", &sum);
+    sum = n + sum_n(n-1);
+    
     return sum;
 }
 
