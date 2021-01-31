@@ -9,9 +9,10 @@ int sum_n(int n)
     if (n == 1){
     return 1;
     }
-    
-    int sum = n + sum_n(n-1);
+    int sum;
     printf("the local variable sum is temporarely stored in %p\n", &sum);
+    sum = n + sum_n(n-1);
+    
     return sum;
 }
 
@@ -31,8 +32,8 @@ int main(void)
 }
 
 /*
- a) with n equal to 2147483647, the problem stops working properly and starts spitting out negative numbers. This is because that is the highest number an integer can possibly represent on a 32-bit
-    computer.
+ a) with n equal to 65536 (Done on windows subsystem for linux), the code stops working properly and starts spitting out negative numbers. This is because that is the highest number an integer can possibly represent on a 16-bit
+    system.
  
  b) The distance between the addresses of uninitialized and local, which are both declared in main, is 4. This is because they take up 4 bytes of memory each.
  
