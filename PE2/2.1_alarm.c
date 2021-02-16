@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <unistd.h> //Needed for mac (only?)
 
+//Implementation of task 2.1
 int main(void){
     int i=1;
 
@@ -10,6 +12,4 @@ int main(void){
     printf("Alarm is ringing!\n");
     }
     return 0;
-
-    
 }
