@@ -6,27 +6,29 @@
 int has_initialized = 0;
 
 // our memory area we can allocate from, here 64 kB
-#define MEM_SIZE (64*1024)
+#define MEM_SIZE (64 * 1024)
 uint8_t heap[MEM_SIZE];
 
 // start and end of our own heap memory area
-void *managed_memory_start; 
+void *managed_memory_start;
 
 // this block is stored at the start of each free and used block
-struct mem_control_block {
+struct mem_control_block
+{
   int size;
   struct mem_control_block *next;
 };
 
 // pointer to start of our free list
-struct mem_control_block *free_list_start;      
+struct mem_control_block *free_list_start;
 
-void mymalloc_init() { 
+void mymalloc_init()
+{
 
   // our memory starts at the start of the heap array
   managed_memory_start = &heap;
 
-  // allocate and initialize our memory control block 
+  // allocate and initialize our memory control block
   // for the first (and at the moment only) free block
   struct mem_control_block *m = (struct mem_control_block *)managed_memory_start;
   m->size = MEM_SIZE - sizeof(struct mem_control_block);
@@ -41,56 +43,86 @@ void mymalloc_init() {
   has_initialized = 1;
 }
 
-void *mymalloc(long numbytes) {
-  if (has_initialized == 0) {
-     mymalloc_init();
+void split(struct mem_control_block *fitting_slot, size_t size)
+{
+  struct mem_control_block *new = (void *)((void *)fitting_slot + size + sizeof(struct mem_control_block));
+  new->size = (fitting_slot->size) - size - sizeof(struct mem_control_block);
+  new->next = fitting_slot->next;
+  fitting_slot->size = size;
+  //free_list_start = 0 ; //feil oppstår her
+  fitting_slot->next = new;
+}
+
+void *mymalloc(long numbytes)
+{
+  if (has_initialized == 0)
+  {
+    mymalloc_init();
   }
-
   /* add your code here! */
-    struct mem_control_block *curr,*prev;
-    void *result;
-    curr=free_list_start;
-    while((curr->next!=NULL)){
-    prev=curr;
-    curr=curr->next;
-    printf("Checked one mem_control_block\n");
-    }
-    if((curr->size)==numbytes){
-    result=(void*)(++curr);
-    printf("Allocated mem_control_block \n");
+  struct mem_control_block *curr, *prev;
+  void *result;
+  curr = free_list_start;
+  while ((((curr->size) < numbytes) || (free_list_start == curr)) && (curr->next != NULL))
+  {
+    prev = curr;
+    curr = curr->next;
+    printf("Checked one block\n");
+  }
+  if ((curr->size) == numbytes)
+  {
+    printf("Size of current block: %d\n", curr->size);
+    free_list_start = 0;
+    result = (void *)(++curr);
+    printf("%ld allocated with exact fit \n", numbytes);
     return result;
-    }
-    else{
-    result=NULL;
-    printf("Not enough memory to alocate\n");
+  }
+  else if ((curr->size) > (numbytes + (sizeof(struct mem_control_block))))
+  {
+    printf("Size of current block: %d\n", curr->size);
+    split(curr, numbytes);
+    result = (void *)(++curr);
+    printf("%ld allocated with split \n", numbytes);
     return result;
-    }
-
+  }
+  else
+  {
+    result = NULL;
+    printf("Not enough memory to allocate\n");
+    return (void *)0;
+  }
 }
 
-void myfree(void *firstbyte) {
-
+void myfree(void *firstbyte)
+{
   /* add your code here! */
-if(((void*)heap<=firstbyte)){
-  struct mem_control_block* curr=firstbyte;
-  --curr;
+  if (((void *)heap <= firstbyte))
+  {
+    struct mem_control_block *curr = firstbyte;
+    --curr;
 
-    struct mem_control_block *current,*prev;
-    current=free_list_start;
-    while((current->next)!=NULL){
-    current->size+=(current->next->size)+sizeof(struct mem_control_block);
-    current->next=current->next->next;
-    prev=current;
-    current=current->next;
+    struct mem_control_block *current, *prev;
+    current = free_list_start;
+    while ((current->next) != NULL)
+    {
+      current->size += (current->next->size) + sizeof(struct mem_control_block);
+      current->next = current->next->next;
+      prev = current;
+      current = current->next;
     }
- }
- else printf("myfree need a valid pointer\n");
-
+  }
+  else
+    printf("myfree need a valid pointer\n");
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
   /* add your test cases here! */
   mymalloc(42);
-
+  //mymalloc(20);
+  //mymalloc(10);
+  //mymalloc(30);
+  mymalloc(65426);
+  mymalloc(10);
 }
