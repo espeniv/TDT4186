@@ -16,6 +16,7 @@ void *managed_memory_start;
 struct mem_control_block
 {
   int size;
+  int free;
   struct mem_control_block *next;
 };
 
@@ -33,8 +34,11 @@ void mymalloc_init()
   struct mem_control_block *m = (struct mem_control_block *)managed_memory_start;
   m->size = MEM_SIZE - sizeof(struct mem_control_block);
 
+  //Mark block as free
+  m->free = 1;
+
   // no next free block
-  m->next = (struct mem_control_block *)0;
+  m->next = NULL;
 
   // initialize the start of the free list
   free_list_start = m;
@@ -43,14 +47,28 @@ void mymalloc_init()
   has_initialized = 1;
 }
 
+int roundUp(int numToRound)
+{
+  int remainder = numToRound % 8;
+  if (remainder == 0)
+  {
+    return numToRound;
+  }
+  return numToRound + 8 - remainder;
+}
+
 void split(struct mem_control_block *fitting_slot, size_t size)
 {
-  struct mem_control_block *new = (void *)((void *)fitting_slot + size + sizeof(struct mem_control_block));
-  new->size = (fitting_slot->size) - size - sizeof(struct mem_control_block);
+  int roundedSize = roundUp(size);
+  struct mem_control_block *new = (void *)((void *)fitting_slot + roundedSize + sizeof(struct mem_control_block));
+  new->size = (fitting_slot->size) - roundedSize - sizeof(struct mem_control_block);
+  new->free = 1;
   new->next = fitting_slot->next;
-  fitting_slot->size = size;
-  //free_list_start = 0 ; //feil oppstår her
+  fitting_slot->size = roundedSize;
+  fitting_slot->free = 0;
   fitting_slot->next = new;
+  printf("%ld was allocated with split in block with space: %d\n", size, fitting_slot->size);
+  printf("Largest block of membytes remaining: %d\n", new->size);
 }
 
 void *mymalloc(long numbytes)
@@ -60,10 +78,12 @@ void *mymalloc(long numbytes)
     mymalloc_init();
   }
   /* add your code here! */
+  printf("Trying to allocate: %ld\n", numbytes);
   struct mem_control_block *curr, *prev;
   void *result;
   curr = free_list_start;
-  while ((((curr->size) < numbytes) || (free_list_start == curr)) && (curr->next != NULL))
+
+  while ((((curr->size) < numbytes) || ((curr->free) == 0)) && (curr->next != NULL))
   {
     prev = curr;
     curr = curr->next;
@@ -72,7 +92,7 @@ void *mymalloc(long numbytes)
   if ((curr->size) == numbytes)
   {
     printf("Size of current block: %d\n", curr->size);
-    free_list_start = 0;
+    curr->free = 0;
     result = (void *)(++curr);
     printf("%ld allocated with exact fit \n", numbytes);
     return result;
@@ -82,7 +102,6 @@ void *mymalloc(long numbytes)
     printf("Size of current block: %d\n", curr->size);
     split(curr, numbytes);
     result = (void *)(++curr);
-    printf("%ld allocated with split \n", numbytes);
     return result;
   }
   else
@@ -120,9 +139,14 @@ int main(int argc, char **argv)
 
   /* add your test cases here! */
   mymalloc(42);
-  //mymalloc(20);
-  //mymalloc(10);
-  //mymalloc(30);
+  mymalloc(10);
+  mymalloc(12345);
+  /*
+  mymalloc(20);
+  mymalloc(30);
   mymalloc(65426);
   mymalloc(10);
+  mymalloc(12345);
+  mymalloc(65328);
+  */
 }
