@@ -5,7 +5,6 @@
 
 int fd[2], nbytes;
 pid_t pid;
-//Må finnes en bedre måte å enkelt øke block-size enn å forlenge stringen
 char string[] = "Test";
 char readbuffer[1000];
 
